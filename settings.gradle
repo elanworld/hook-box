@@ -1,0 +1,2 @@
+rootProject.name = "hook-box"
+include ':app'
