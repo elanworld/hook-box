@@ -2,6 +2,8 @@ package com.alan.hook;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
 import android.widget.TextView;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
@@ -25,18 +27,18 @@ public class HookText implements IXposedHookLoadPackage {
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lpparam) {
         Log.i("hook", "【handleLoadPackage】" + lpparam.packageName);//任何一个app启动时都会调用
-        if (lpparam.packageName.equals(HOOK_PACKAGE_NAME)) { //匹配指定的包名
-            //参数：String className, ClassLoader classLoader, String methodName, Object... parameterTypesAndCallback
-            XposedHelpers.findAndHookMethod(HOOK_CLASS_NAME, lpparam.classLoader, "onCreateView", Bundle.class, new XC_MethodHook() {
+        if (lpparam.packageName.equals(HOOK_PACKAGE_NAME)) {
+            // hook方法，必须有方法参数
+            XposedHelpers.findAndHookMethod(HOOK_CLASS_NAME, lpparam.classLoader, "onCreateView", LayoutInflater.class, ViewGroup.class,Bundle.class,
+            new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    Log.i("hook", "【afterHookedMethod】" + param.method.getName()); //当Hook成功后回调
+                    Log.i("hook", "【afterHookedMethod】" + param.method.getName());
                     Class c = lpparam.classLoader.loadClass(HOOK_CLASS_NAME);//不能通过Class.forName()来获取Class，在跨应用时会失效
                     Field field = c.getDeclaredField("textView");
                     field.setAccessible(true);
-                    TextView textView = (TextView) field.get(param.thisObject);//param.thisObject为执行该方法的对象，在这里指Activity
+                    TextView textView = (TextView) field.get(param.thisObject);
                     textView.setText("Hello Xposed");
-                    //可以调用param.setResult()设置方法的返回值！
                 }
             });
         }
